@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Help Princess Lumi collect the unicorns!</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <style>
+    html { box-sizing: border-box; }
+    *,*:before,*:after { box-sizing: inherit; }
+    body {
+      margin:0; padding:0;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      background: linear-gradient(120deg, #fcdfff 0%, #cffdff 40%, #fff7e7 80%, #eaf4ff 100%);
+    }
+    h1 {
+      margin:24px auto 0 auto; text-align:center;
+      font-size: 2.3em; font-weight:bold; letter-spacing:0.06em;
+      background: linear-gradient(120deg, #ffe277 7%, #ff82fd 20%, #56bffe 70%, #ffe2fa 90%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; color: #fff;
+      text-shadow: 0 0 2px #fffadd, 0 8px 32px #ae61c5, 0 2px 13px #ffe27799;
+    }
+    #game-container {
+      max-width: 700px; margin: 0 auto; margin-top:32px; position:relative; width:96vw;
+    }
+    canvas {
+      display:block; width:100%; height:auto; max-width:100vw;
+      border-radius: 22px;
+      background: radial-gradient(ellipse at 70% 23%, #ffe8fe 26%, #e5fefd 46%, #fefde1 78%, #f7e4ff 100%);
+      border: 6px solid #e6e6ff; touch-action: none;
+      box-shadow: 0 5px 22px #eab4e826;
+    }
+    #magical-container {
+      position: absolute; right:8px; top:8px;
+      width:90px; height:62px; pointer-events:none; z-index:9;
+    }
+    #controls {
+      display:flex; flex-direction:column; align-items:center;
+      margin-top:22px; gap:8px; margin-bottom:18px;
+    }
+    #controls-row { display:flex; flex-direction:row; gap:12px; justify-content:center;}
+    .control-btn {
+      width:47px; height:47px; font-size:1.33em;
+      background:linear-gradient(135deg,#fff8fd 70%, #e6fefd 100%);
+      color:#ae9cf7; border:2px solid #eaf4ff; border-radius:13px;
+      box-shadow:0 4px 11px #eecbfe33; cursor:pointer; transition: box-shadow 0.2s;
+      touch-action:pointer; user-select:none;
+    }
+    .control-btn:active, .control-btn:focus { background: #ffdbe8; color: #ae9cf7; }
+    @media (max-width: 520px) {
+      h1 { font-size: 1.27em; margin: 12px auto 0 auto;}
+      #game-container { margin-top:9px; }
+      canvas { border-radius:10px; border-width:3px;}
+      #controls { gap:4px; margin-bottom:9px;}
+      .control-btn { width:32px; height:32px; font-size:1em; border-radius:7px;}
+      #magical-container { width:47px; height:33px; right:2px; top:2px;}
+      #invitation { padding:6vw 2vw 3vw 2vw; font-size:.9em; max-width:99vw; border-radius:13px;}
+      .inv-title { font-size:1.02em;}
+    }
+    @media (max-width:370px) {
+      h1 { font-size: .93em; }
+      #invitation { font-size:0.72em; border-radius:10px;}
+      #magical-container { width:24px; height:19px;}
+    }
+    #modalOverlay {
+      position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(34,30,33,0.72);
+      display:none;align-items:center;justify-content:center;z-index:100;
+    }
+    #invitation {
+      font-size:1.15em; background:#19171f;
+      color:#fee076;
+      box-shadow: 0 6px 28px #18171a;
+      padding:28px 24px 22px 24px; border-radius:19px; min-width:165px; max-width:97vw;
+      text-align:center; position:relative; border:2px solid #fff;
+      font-family:'Comic Sans MS', cursive, Arial;
+      letter-spacing:0.01em;
+    }
+    #popupGoldStarCanvas {
+      position: absolute; pointer-events:none; z-index:1; border-radius:19px; left:0; top:0;
+      width:100%; height:100%;
+      background: transparent;
+    }
+    #pirateIcon {font-size:1.5em;margin-bottom:7px;}
+    .inv-title {
+      font-size:1.13em; font-weight:bold;
+      color:#fee076; text-shadow:0 2px 6px #fffbe9;
+      font-family:'Trebuchet MS','Comic Sans MS',cursive,Arial;
+      margin-bottom:12px; letter-spacing:0.09em;
+    }
+    #resetBtn {
+      margin:18px auto 0 auto; padding:10px 17px;
+      background:linear-gradient(90deg,#23252e 80%,#18171a 100%);
+      border:2px solid #fee076;border-radius:9px;font-size:1em;cursor:pointer;color:#fee076;
+      font-weight:bold; box-shadow:0 2px 11px #211d12,0 1px 0 #130a12;
+      touch-action:pointer;
+    }
+    #resetBtn:hover { background: linear-gradient(90deg, #18171a, #2c292e); color: #fffadd;}
+  </style>
+</head>
+<body>
+  <h1>Help Princess Lumi collect the unicorns!</h1>
+  <div id="game-container">
+    <canvas id="game" width="700" height="340"></canvas>
+    <div id="magical-container"></div>
+    <div id="controls">
+      <button class="control-btn" id="btnUp" tabindex="1" aria-label="Up">⬆️</button>
+      <div id="controls-row">
+        <button class="control-btn" id="btnLeft" tabindex="2" aria-label="Left">⬅️</button>
+        <button class="control-btn" id="btnDown" tabindex="3" aria-label="Down">⬇️</button>
+        <button class="control-btn" id="btnRight" tabindex="4" aria-label="Right">➡️</button>
+      </div>
+    </div>
+  </div>
+  <div id="modalOverlay">
+    <div id="invitation">
+      <canvas id="popupGoldStarCanvas"></canvas>
+      <div style="position:relative;z-index:3;">
+        <div id="pirateIcon">☠️</div>
+        <div class="inv-title">Ahoy matey! You're invited!</div>
+        <div style="margin:14px 0 8px 0; font-size:1em;">
+          <strong>Arrr! Raise the anchor and set sail for a magical day!</strong><br>
+          Join us for Lumi's 2nd birthday party, with pirates and princesses!<br><br>
+          <span style="color:#fee076;font-size:1.03em;">
+            Saturday, 3rd January 2026<br>
+            10:30 – 12:00<br>
+            Toddler Sense, Stafford<br>
+            Business Village Enterprise Park,<br>
+            Beaconside, Weston Rd,<br>
+            Stafford ST18 0BF
+          </span>
+          <br><br>
+          We can't wait to see ye there!
+        </div>
+        <button id="resetBtn" onclick="resetGame()">Play Again</button>
+      </div>
+    </div>
+  </div>
+<script>
+const canvas = document.getElementById('game'), ctx = canvas.getContext('2d');
+let princess = { x:100, y:140, size:49 };
+const unicorns = [
+  {x:130, y:220, collected:false},
+  {x:270, y:70, collected:false},
+  {x:430, y:250, collected:false},
+  {x:590, y:170, collected:false}
+];
+let keys = {}, dragging=false, dragOffset={x:0, y:0}, won=false;
+let sparkleStars = [];
+const STAR_COLS = ["#fff7fa","#fdb2da","#c9f2fd","#f7fede","#ffd8ed","#c8fedd","#f6ffcd"];
+for(let i=0;i<50;i++){
+  sparkleStars.push({
+    x: Math.random()*canvas.width,
+    y: Math.random()*canvas.height,
+    size: 0.8 + Math.random()*2.4,
+    color: STAR_COLS[Math.floor(Math.random()*STAR_COLS.length)],
+    pulseSeed: Math.random()*Math.PI*2
+  });
+}
+function drawPrincess(p) {
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  for(let i=0; i<18;i++) {
+    let ang = i*2*Math.PI/18 + Date.now()/2000 + i*0.3;
+    let d = 33+Math.sin(Date.now()/1100+i)*3;
+    let x = Math.cos(ang)*d;
+    let y = Math.sin(ang)*d;
+    let col = STAR_COLS[i%STAR_COLS.length];
+    drawStar(ctx,x,y,2.1+Math.random()*1.3,col);
+  }
+  ctx.save();
+  ctx.globalAlpha=0.19;
+  let grad = ctx.createRadialGradient(0,40,6,0,55,18);
+  grad.addColorStop(0,"#eec7fa"); grad.addColorStop(1,"#a0eaff");
+  ctx.beginPath(); ctx.ellipse(0,41,19,9,0,0,Math.PI*2);
+  ctx.fillStyle = grad; ctx.fill(); ctx.restore();
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(-15,25); ctx.bezierCurveTo(-23,57,-8,74,0,66);
+  ctx.bezierCurveTo(8,74,23,57,15,25); ctx.closePath();
+  let grad2 = ctx.createLinearGradient(0,25,0,68);
+  grad2.addColorStop(0,"#fdb2da"); grad2.addColorStop(.19,"#c6eefd");
+  grad2.addColorStop(.45,"#ffd8ed"); grad2.addColorStop(.7,"#fff7fa"); grad2.addColorStop(.87,"#c8fedd"); grad2.addColorStop(1,"#fdb2da");
+  ctx.fillStyle = grad2; ctx.strokeStyle="#e1bcfb"; ctx.lineWidth=2.5;
+  ctx.shadowColor="#fdb2da";ctx.shadowBlur=9; ctx.fill(); ctx.stroke();
+  for(let s=0;s<3;s++){
+    ctx.globalAlpha=0.13+s*0.09;
+    ctx.beginPath();
+    ctx.ellipse(0,35+s*10,20-4*s,9-3*s,0,0,Math.PI*2);
+    ctx.fillStyle="#ffeaf2"; ctx.fill();
+  }
+  ctx.globalAlpha=1; ctx.restore();
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(0,10,9,6,0,0,Math.PI*2);
+  let bodGrad = ctx.createRadialGradient(0,6,2,0,13,8);
+  bodGrad.addColorStop(0,'#fff3f9'); bodGrad.addColorStop(1,'#ffe5f5');
+  ctx.fillStyle = bodGrad; ctx.fill(); ctx.restore();
+  ctx.save(); ctx.globalAlpha=0.48;
+  ctx.beginPath();
+  ctx.ellipse(0,19,9,2,0,0,Math.PI*2);
+  ctx.fillStyle="#ea61b1"; ctx.fill(); ctx.globalAlpha=1; ctx.restore();
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(-9,12); ctx.lineTo(-18,23); ctx.lineTo(-13,29); ctx.lineTo(-9,21); ctx.closePath();
+  ctx.moveTo(9,12); ctx.lineTo(18,23); ctx.lineTo(13,29); ctx.lineTo(9,21); ctx.closePath();
+  ctx.fillStyle="#ffd4b5"; ctx.strokeStyle="#ebbedc"; ctx.lineWidth=1;
+  ctx.globalAlpha=.98; ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(-14,27,1.5,0,Math.PI*2);
+  ctx.arc(14,27,1.5,0,Math.PI*2);
+  ctx.fillStyle="#ffd4b5"; ctx.fill(); ctx.globalAlpha=1; ctx.restore();
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(0,2.5,9,0,Math.PI*2);
+  let faceGrad = ctx.createRadialGradient(0,-2,6,0,10,14);
+  faceGrad.addColorStop(0,"#ffeeb5"); faceGrad.addColorStop(.6,"#fff3c2");
+  faceGrad.addColorStop(.97,"#eed7b9");
+  ctx.fillStyle=faceGrad; ctx.strokeStyle="#ffd9cf";
+  ctx.lineWidth=0.9; ctx.shadowColor="#ffeeb5"; ctx.shadowBlur=4;
+  ctx.fill(); ctx.stroke(); ctx.restore();
+  ctx.save();
+  ctx.save(); ctx.beginPath(); ctx.moveTo(-2.8,-3.2); ctx.bezierCurveTo(-5,-6.0,-0.2,-7.0,-0.6,-2.5); ctx.lineWidth=0.7; ctx.strokeStyle="#ad9382"; ctx.globalAlpha=0.56; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(2.8,-3.2); ctx.bezierCurveTo(5,-6.0,0.2,-7.0,0.6,-2.5); ctx.lineWidth=0.7; ctx.strokeStyle="#ad9382"; ctx.globalAlpha=0.56; ctx.stroke(); ctx.restore();
+  for(let side of [-3,3]){ ctx.save();
+    ctx.beginPath(); ctx.arc(side,1.7,1.1,0,Math.PI*2);
+    let eg=ctx.createRadialGradient(side,1.7,0.6,side+0.2,3,1.1); eg.addColorStop(0,"#7ed3fb"); eg.addColorStop(1,"#24367d");
+    ctx.fillStyle=eg; ctx.fill();
+    for(let j=0;j<3;j++){
+      let ang = Math.PI/1.9 + j*0.14;
+      ctx.beginPath(); ctx.moveTo(side,1.1);
+      ctx.lineTo(side+Math.cos(ang)*2.3,1.1-Math.sin(ang)*2.2);
+      ctx.strokeStyle="#6b5196"; ctx.lineWidth=0.3; ctx.globalAlpha=0.5; ctx.stroke();
+    }
+    ctx.restore();
+  }
+  ctx.globalAlpha=1;
+  ctx.globalAlpha=0.17;
+  ctx.beginPath(); ctx.arc(-3.7,6,1.2,0,Math.PI*2); ctx.arc(3.7,6,1,0,Math.PI*2);
+  ctx.fillStyle="#ea61b1"; ctx.fill(); ctx.globalAlpha=1;
+  ctx.save(); ctx.beginPath();
+  ctx.moveTo(-1.6,7.7); ctx.bezierCurveTo(-1,8.6,1,8.6,1.6,7.7);
+  ctx.quadraticCurveTo(0,8.7,-1.6,7.7);
+  ctx.fillStyle="#ea61b1"; ctx.globalAlpha=0.92; ctx.fill(); ctx.globalAlpha=1;
+  ctx.restore();
+  ctx.beginPath();
+  ctx.arc(0,7.5,2.2,Math.PI*0.22,Math.PI*0.82,false);
+  ctx.strokeStyle="#ea61b1"; ctx.lineWidth=1.3; ctx.globalAlpha=0.7; ctx.stroke();
+  ctx.globalAlpha=1; ctx.restore();
+  ctx.save();
+  ctx.translate(0,-6.5);
+  ctx.beginPath();
+  ctx.moveTo(-4.8,0);
+  ctx.lineTo(-3.3,-7); ctx.lineTo(0,-3.4);
+  ctx.lineTo(3.3,-7); ctx.lineTo(4.8,0);
+  ctx.bezierCurveTo(2.8,2.9,-2.8,2.9,-4.8,0);
+  ctx.closePath();
+  let cgrad = ctx.createLinearGradient(0,-7,0,0);
+  cgrad.addColorStop(0,'#fffbe5'); cgrad.addColorStop(0.7,'#f7dc57'); cgrad.addColorStop(1,'#ede424');
+  ctx.fillStyle = cgrad; ctx.shadowBlur=8; ctx.shadowColor="#f7dc57";
+  ctx.strokeStyle = "#dcb324"; ctx.lineWidth = 1.1; ctx.fill(); ctx.stroke();
+  for (let [gx,gy,col] of [[-2.5,-3.5,'#fdb2da'],[0,-2.3,'#c6eefd'],[2.5,-3.5,'#c8fedd']]) {
+    ctx.beginPath(); ctx.arc(gx,gy,1.1,0,Math.PI*2);
+    ctx.fillStyle=col; ctx.shadowBlur=1; ctx.strokeStyle="#fff"; ctx.lineWidth=0.5; ctx.globalAlpha=0.95; ctx.fill(); ctx.stroke(); ctx.globalAlpha=1;
+  } ctx.restore();
+  ctx.save(); ctx.beginPath();
+  ctx.moveTo(-7,-3.2); ctx.bezierCurveTo(-15,14,-1,26,0,24);
+  ctx.bezierCurveTo(1,26,15,14,7,-3.2);
+  ctx.quadraticCurveTo(0,-9,-7,-3.2);
+  let hgrad = ctx.createLinearGradient(-14,-9,13,19);
+  hgrad.addColorStop(0,"#fffbe5"); hgrad.addColorStop(0.63,"#ffe785"); hgrad.addColorStop(1,"#dda670");
+  ctx.fillStyle=hgrad; ctx.globalAlpha=0.87; ctx.fill(); ctx.globalAlpha=1;
+  ctx.beginPath(); ctx.moveTo(-3,-3.2); ctx.bezierCurveTo(-6,6,0,19,0,10); ctx.strokeStyle="#ffe785"; ctx.lineWidth=2; ctx.globalAlpha=0.11; ctx.stroke();
+  ctx.restore(); ctx.restore();
+}
+function drawStar(ctx,x,y,size,color) {
+  ctx.save();
+  ctx.translate(x,y); ctx.rotate(Date.now()/2300 + x/60);
+  ctx.globalAlpha = ctx.globalAlpha || 1;
+  ctx.beginPath();
+  for(let i=0;i<6;i++){
+    let angle = i*Math.PI/3;
+    ctx.lineTo(Math.cos(angle)*size,Math.sin(angle)*size);
+    ctx.lineTo(Math.cos(angle+Math.PI/6)*size*0.53,Math.sin(angle+Math.PI/6)*size*0.5);
+  }
+  ctx.closePath();
+  ctx.fillStyle=color; ctx.shadowColor="#fffbeed1"; ctx.shadowBlur=8; ctx.fill();
+  ctx.restore();
+}
+function drawUnicorn(x, y, collected, ctxRef) {
+  const contextToUse = ctxRef || ctx;
+  contextToUse.save();
+  contextToUse.translate(x, y);
+  contextToUse.globalAlpha=collected?0.35:1;
+  contextToUse.beginPath();
+  contextToUse.ellipse(0,6,8,4.5,0,0,Math.PI*2);
+  contextToUse.fillStyle="#fff";
+  contextToUse.strokeStyle="#c9bcfd";
+  contextToUse.lineWidth=2;
+  contextToUse.shadowBlur=2; contextToUse.shadowColor="#bfabfa";
+  contextToUse.fill(); contextToUse.stroke();
+  contextToUse.save(); contextToUse.strokeStyle="#ccc"; contextToUse.lineWidth=1; contextToUse.globalAlpha=0.7;
+  contextToUse.beginPath(); contextToUse.moveTo(-4,11); contextToUse.lineTo(-4,16);
+  contextToUse.moveTo(0,12); contextToUse.lineTo(0,17);
+  contextToUse.moveTo(3,11); contextToUse.lineTo(3,18);
+  contextToUse.moveTo(6,10); contextToUse.lineTo(6,16);
+  contextToUse.stroke();
+  contextToUse.restore();
+  for (let dx of [-4,0,3,6]) {
+    contextToUse.beginPath();
+    contextToUse.arc(dx,dx==6?16:17,1.1,0,Math.PI*2);
+    contextToUse.fillStyle="#ae61c5";
+    contextToUse.fill();
+  }
+  contextToUse.beginPath();
+  contextToUse.arc(0,-3,5.3,0,Math.PI*2);
+  contextToUse.fillStyle="#fff";
+  contextToUse.strokeStyle="#c9bcfd";
+  contextToUse.lineWidth=2;
+  contextToUse.fill(); contextToUse.stroke();
+  contextToUse.save(); contextToUse.beginPath(); contextToUse.moveTo(-4,-7); contextToUse.lineTo(-7,-12); contextToUse.lineTo(-2,-8); contextToUse.closePath();
+  contextToUse.fillStyle="#eadcf5"; contextToUse.globalAlpha=0.9; contextToUse.fill(); contextToUse.restore();
+  contextToUse.save(); contextToUse.beginPath(); contextToUse.moveTo(4,-7); contextToUse.lineTo(7,-12); contextToUse.lineTo(2,-8); contextToUse.closePath();
+  contextToUse.fillStyle="#eadcf5"; contextToUse.globalAlpha=0.9; contextToUse.fill(); contextToUse.restore();
+  for(let m=0;m<5;m++) {
+    contextToUse.beginPath();
+    contextToUse.arc(-2+m, -7, 1.6-m*0.22, Math.PI*0.9, Math.PI*1.95, false);
+    contextToUse.strokeStyle=STAR_COLS[m];
+    contextToUse.lineWidth=1;
+    contextToUse.shadowBlur=1; contextToUse.shadowColor="#fff";
+    contextToUse.stroke();
+  }
+  contextToUse.beginPath();
+  contextToUse.arc(1.5,-1.5,0.8,0,Math.PI*2);
+  contextToUse.fillStyle="#ae61c5"; contextToUse.globalAlpha=0.7; contextToUse.fill();
+  contextToUse.globalAlpha=1;
+  contextToUse.beginPath();
+  contextToUse.arc(3,-0.8,0.75,0,Math.PI*2);
+  contextToUse.fillStyle="#fdb2da"; contextToUse.globalAlpha=0.22; contextToUse.fill(); contextToUse.globalAlpha=1;
+  contextToUse.save();
+  contextToUse.beginPath();
+  contextToUse.moveTo(0,-8); contextToUse.lineTo(0,-13);
+  contextToUse.lineWidth=2;
+  contextToUse.strokeStyle="#f7df72";
+  contextToUse.shadowBlur=2; contextToUse.shadowColor="#f7df72";
+  contextToUse.globalAlpha=0.77;
+  contextToUse.stroke();
+  contextToUse.restore();
+  contextToUse.restore();
+}
+function drawMagicalContainer() {
+  let canvasContainer = document.getElementById("magical-container");
+  let unicornCanvas = canvasContainer._unicornCanvas;
+  if(!unicornCanvas) {
+    unicornCanvas = document.createElement("canvas");
+    unicornCanvas.width = 105;
+    unicornCanvas.height = 74;
+    unicornCanvas.style.width = "105px";
+    unicornCanvas.style.height = "74px";
+    canvasContainer.appendChild(unicornCanvas);
+    canvasContainer._unicornCanvas = unicornCanvas;
+  }
+  let uctx = unicornCanvas.getContext("2d");
+  uctx.clearRect(0,0,105,74);
+  uctx.save();
+  uctx.globalAlpha=0.94;
+  for (let i = 0; i < 5; i++) {
+    let cx = 51 + [0, 17, -15, 23, -22][i];
+    let cy = 49 + [0, -9, -3, 7, 9][i];
+    let rx = [40,22,16,13,13][i];
+    let ry = [18,13,14,11,11][i];
+    let grad = uctx.createRadialGradient(cx,cy,ry/1.4,cx,cy,ry*1.5);
+    grad.addColorStop(0,"#fffbe9"); grad.addColorStop(0.64,"#fafcec");
+    grad.addColorStop(1,["#fdedff","#eaf7fe","#f3edfd","#fff7fc","#c9faff"][i]);
+    uctx.beginPath(); uctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);
+    uctx.fillStyle = grad; uctx.shadowBlur=12+6*i; uctx.shadowColor="#feeeff";
+    uctx.fill();
+  }
+  uctx.globalAlpha=1;
+  for(let i=0;i<8;i++){
+    let ang = i*Math.PI*2/8 + Date.now()/1500 + i*0.24;
+    let r = 32+Math.sin(Date.now()/1400+i)*3;
+    let x = 54 + Math.cos(ang)*r; let y = 46 + Math.sin(ang)*r;
+    uctx.globalAlpha = 0.62+Math.random()*0.20;
+    drawStar(uctx,x,y,2.2+Math.random()*1.3, STAR_COLS[i%STAR_COLS.length]);
+  }
+  uctx.globalAlpha=1;
+  let collected = unicorns.filter(u=>u.collected);
+  let slots = [ [37,38],[69,32],[42,62],[72,59] ];
+  for(let i=0;i<collected.length;i++){
+    let slot = slots[i%slots.length];
+    drawUnicorn(slot[0],slot[1],true,uctx);
+    drawStar(uctx,slot[0]+8,slot[1]-6,2.3,"#ffd8ed");
+    drawStar(uctx,slot[0]-8,slot[1]+8,1.7,"#c8fedd");
+  }
+  uctx.restore();
+}
+function drawBgSparkles() {
+  for(let i=0;i<sparkleStars.length;i++){
+    let star = sparkleStars[i];
+    let pulse = 0.73 + 0.5*Math.sin(Date.now()/320 + star.pulseSeed);
+    drawStar(ctx,star.x,star.y,star.size*1.0*pulse,star.color);
+    if(i%13==0) drawStar(ctx,star.x,star.y,star.size*1.5*pulse,"#fffbed");
+  }
+}
+function drawItems(){
+  drawBgSparkles();
+  unicorns.forEach((u)=>{ if(!u.collected) drawUnicorn(u.x,u.y,false,ctx); });
+  drawMagicalContainer();
+}
+function drawGame(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawItems();
+  drawPrincess(princess);
+}
+function unicornCollision(p,u){const dx=p.x-u.x,dy=p.y-u.y;return Math.sqrt(dx*dx+dy*dy)<p.size*0.8;}
+function checkCollisions(){
+  if(!won){
+    unicorns.forEach(u=>{if(!u.collected && unicornCollision(princess,u)) u.collected=true;});
+    if(unicorns.every(u=>u.collected)){
+      showInvitationPopup();
+      won=true;
+    }
+  }
+}
+function movePrincess(){
+  if(won||dragging)return;
+  if(keys['ArrowUp']||keys['w'])princess.y-=4;
+  if(keys['ArrowDown']||keys['s'])princess.y+=4;
+  if(keys['ArrowLeft']||keys['a'])princess.x-=4;
+  if(keys['ArrowRight']||keys['d'])princess.x+=4;
+  princess.x=Math.max(0,Math.min(canvas.width-princess.size,princess.x));
+  princess.y=Math.max(0,Math.min(canvas.height-princess.size,princess.y));
+}
+canvas.addEventListener('touchstart',function(e){
+  if(won)return;
+  let rect=canvas.getBoundingClientRect(); let touch=e.touches[0];
+  let x=(touch.clientX-rect.left)*(canvas.width/rect.width),y=(touch.clientY-rect.top)*(canvas.height/rect.height);
+  if(Math.abs(x-princess.x)<princess.size && Math.abs(y-princess.y)<princess.size){
+    dragging=true;dragOffset.x=princess.x-x;dragOffset.y=princess.y-y;e.preventDefault();
+  }
+});
+canvas.addEventListener('touchmove',function(e){
+  if(dragging){
+    let rect=canvas.getBoundingClientRect();let touch=e.touches[0];
+    let x=(touch.clientX-rect.left)*(canvas.width/rect.width),y=(touch.clientY-rect.top)*(canvas.height/rect.height);
+    princess.x=Math.max(0,Math.min(canvas.width-princess.size,x+dragOffset.x));
+    princess.y=Math.max(0,Math.min(canvas.height-princess.size,y+dragOffset.y)); e.preventDefault();
+  }
+});
+canvas.addEventListener('touchend',function(e){if(dragging){dragging=false;e.preventDefault();}});
+canvas.addEventListener('mousedown',function(e){
+  if(won)return;
+  let rect=canvas.getBoundingClientRect();
+  let x=(e.clientX-rect.left)*(canvas.width/rect.width),y=(e.clientY-rect.top)*(canvas.height/rect.height);
+  if(Math.abs(x-princess.x)<princess.size && Math.abs(y-princess.y)<princess.size){
+    dragging=true;dragOffset.x=princess.x-x;dragOffset.y=princess.y-y;
+  }
+});
+window.addEventListener('mousemove',function(e){
+  if(dragging&&!won){
+    let rect=canvas.getBoundingClientRect();
+    let x=(e.clientX-rect.left)*(canvas.width/rect.width),y=(e.clientY-rect.top)*(canvas.height/rect.height);
+    princess.x=Math.max(0,Math.min(canvas.width-princess.size,x+dragOffset.x));
+    princess.y=Math.max(0,Math.min(canvas.height-princess.size,y+dragOffset.y));
+  }
+});
+window.addEventListener('mouseup',function(){dragging=false;});
+window.addEventListener('keydown',function(e){keys[e.key]=true;});
+window.addEventListener('keyup',function(e){keys[e.key]=false;});
+function dpadStart(dir){keys[dir]=true;}
+function dpadEnd(dir){keys[dir]=false;}
+["btnUp","btnDown","btnLeft","btnRight"].forEach(function(id,i){
+  let dir=["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"][i];
+  document.getElementById(id).ontouchstart=()=>dpadStart(dir);
+  document.getElementById(id).ontouchend=()=>dpadEnd(dir);
+  document.getElementById(id).onmousedown=()=>dpadStart(dir);
+  document.getElementById(id).onmouseup=()=>dpadEnd(dir);
+});
+function showInvitationPopup(){
+  document.getElementById('modalOverlay').style.display="flex";
+  document.getElementById('resetBtn').style.display="inline-block";
+  fitPopupCanvas();
+  setTimeout(animateGoldStars, 40);
+}
+function hideInvitation(){document.getElementById('modalOverlay').style.display="none";}
+function resetGame(){
+  princess.x=100;princess.y=140;
+  unicorns.forEach(u=>u.collected=false);
+  won=false;hideInvitation();keys={}; drawMagicalContainer();
+  fitPopupCanvas();
+}
+function resizeCanvas(){
+  let maxWidth=Math.min(window.innerWidth*0.999,700),aspect=340/700;
+  canvas.style.width=maxWidth+"px"; canvas.style.height=(maxWidth*aspect)+"px";
+}
+window.addEventListener('resize',function(){
+  fitPopupCanvas();
+  resizeCanvas();
+});
+resizeCanvas();
+function fitPopupCanvas() {
+  let popup = document.getElementById('invitation');
+  let c = document.getElementById('popupGoldStarCanvas');
+  if (!popup || !c) return;
+  let rect = popup.getBoundingClientRect();
+  c.width = rect.width;
+  c.height = rect.height;
+}
+function animateGoldStars(){
+  let c = document.getElementById('popupGoldStarCanvas');
+  if(!c) return;
+  fitPopupCanvas();
+  let ctx = c.getContext('2d'), w=c.width, h=c.height;
+  ctx.clearRect(0,0,w,h);
+  let radius = Math.min(w,h)/2 - 8;
+  let centerX = w/2, centerY = h/2;
+  let stars = Math.max(10, Math.floor(w/60));
+  let t=Date.now()/900;
+  for(let i=0;i<stars;i++){
+    let ang = Math.PI*2*i/stars + t*0.7;
+    let x = centerX + Math.cos(ang)*radius;
+    let y = centerY + Math.sin(ang)*radius;
+    let size = Math.max(7, Math.min(w,h)/22) + Math.sin(t*1.3+i*2)*2;
+    ctx.save();
+    ctx.globalAlpha = 0.91 + 0.14*Math.sin(t+i*1.22);
+    ctx.beginPath();
+    for(let j=0;j<6;j++){
+      let a2 = j*Math.PI/3;
+      ctx.lineTo(x+Math.cos(a2)*size, y+Math.sin(a2)*size);
+      ctx.lineTo(x+Math.cos(a2+Math.PI/6)*size*0.58, y+Math.sin(a2+Math.PI/6)*size*0.63);
+    }
+    ctx.closePath();
+    let grad = ctx.createRadialGradient(x,y,2,x,y,size+4);
+    grad.addColorStop(0, "#fffaad");
+    grad.addColorStop(0.33, "#fee076");
+    grad.addColorStop(1, "#fdca00");
+    ctx.fillStyle=grad;
+    ctx.shadowColor="#fee076";
+    ctx.shadowBlur=13;
+    ctx.fill();
+    ctx.restore();
+  }
+  requestAnimationFrame(animateGoldStars);
+}
+// --- game loop ---
+function gameLoop(){
+  movePrincess(); checkCollisions(); drawGame();
+  requestAnimationFrame(gameLoop); drawMagicalContainer();
+}
+resetGame(); gameLoop();
+</script>
+</body>
+</html>
